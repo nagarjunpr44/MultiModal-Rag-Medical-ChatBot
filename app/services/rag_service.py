@@ -17,7 +17,7 @@ class RAGService:
         self.llm = ChatGroq(
             temperature=0, 
             groq_api_key=settings.GROQ_API_KEY, 
-            model_name="llama-3.2-11b-vision-preview"
+            model_name="meta-llama/llama-4-scout-17b-16e-instruct"
         )
         self.collection = vector_db.get_collection()
         
