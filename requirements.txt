@@ -14,6 +14,7 @@ langchain-community>=0.0.25
 chromadb>=1.5.9
 open-clip-torch>=2.24.0
 torchvision>=0.17.0
+sentence-transformers>=2.5.0
 
 # Data Parsing & Utilities
 PyMuPDF>=1.23.21  # For parsing PDFs
