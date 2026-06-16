@@ -1,0 +1,28 @@
+# Backend & API
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.3
+pydantic-settings>=2.1.0
+
+# LLM & Orchestration (LangChain)
+langchain>=0.1.10
+langchain-core>=0.1.28
+langchain-groq>=0.0.1
+langchain-community>=0.0.25
+
+# Vector Database & Embeddings
+chromadb>=1.5.9
+open-clip-torch>=2.24.0
+torchvision>=0.17.0
+
+# Data Parsing & Utilities
+PyMuPDF>=1.23.21  # For parsing PDFs
+unstructured>=0.12.5 # For advanced document extraction
+Pillow>=10.2.0    # For image handling
+
+# Frontend
+streamlit>=1.31.1
+
+# HTTP client
+httpx>=0.26.0
+requests>=2.31.0
