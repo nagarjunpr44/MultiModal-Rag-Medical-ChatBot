@@ -1,0 +1,20 @@
+# Use an official lightweight Python image
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install UV
+RUN pip install uv
+
+# Copy requirements
+COPY requirements.txt .
+RUN uv pip install --system -r requirements.txt
+
+# Copy the frontend application
+COPY ./frontend ./frontend
+
+# Expose the Streamlit port
+EXPOSE 8501
+
+# Run the Streamlit app
+CMD ["streamlit", "run", "frontend/app.py", "--server.port=8501", "--server.address=0.0.0.0"]

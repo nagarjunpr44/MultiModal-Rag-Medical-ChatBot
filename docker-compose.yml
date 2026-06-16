@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: medical-rag-api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the data and database directories so data persists between container restarts
+      - ./data:/app/data
+      - ./chroma_db:/app/chroma_db
+    env_file:
+      - .env
+    restart: always
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: medical-rag-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://backend-api:8000/api
+    env_file:
+      - .env
+    depends_on:
+      - backend-api
+    restart: always
