@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from app.models.chat import ChatRequest, ChatResponse
 from app.services.rag_service import rag_service
 
@@ -19,4 +20,18 @@ async def chat_endpoint(request: ChatRequest):
         return ChatResponse(response=answer)
     except Exception as e:
         # Centralized error handling
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/chat/stream")
+async def chat_stream_endpoint(request: ChatRequest):
+    """
+    Receives a medical query, passes it to the LangChain RAG service,
+    and returns a Server-Sent Events (SSE) stream of the answer.
+    """
+    try:
+        return StreamingResponse(
+            rag_service.get_answer_stream(question=request.query),
+            media_type="text/event-stream"
+        )
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

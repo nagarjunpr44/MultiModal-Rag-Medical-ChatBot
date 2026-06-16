@@ -63,6 +63,7 @@ export default function RuixenMoonChat() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -81,10 +82,10 @@ export default function RuixenMoonChat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isStreaming]);
 
   const handleSend = async () => {
-    if (!message.trim() || isLoading) return;
+    if (!message.trim() || isLoading || isStreaming) return;
 
     const userMessage = message.trim();
     setMessage("");
@@ -93,18 +94,72 @@ export default function RuixenMoonChat() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/chat`, { query: userMessage });
-      if (response.status === 200) {
-        const answer = response.data.response || "No response received.";
-        setMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
-      } else {
-        setMessages((prev) => [...prev, { role: 'assistant', content: "Backend Error: Received unexpected status code." }]);
+      const response = await fetch(`${API_BASE_URL}/chat/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: userMessage }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Backend Error: Received unexpected status code.');
+      }
+
+      setIsStreaming(true);
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let firstChunkReceived = false;
+
+      if (reader) {
+        let done = false;
+        let buffer = '';
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            buffer += decoder.decode(value, { stream: true });
+          }
+          
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // keep incomplete line
+          
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine.startsWith('data:')) {
+              const data = trimmedLine.slice(5).trim();
+              if (data === '[DONE]') continue;
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.content) {
+                  if (!firstChunkReceived) {
+                    firstChunkReceived = true;
+                    setIsLoading(false);
+                    setMessages((prev) => [...prev, { role: 'assistant', content: parsed.content }]);
+                  } else {
+                    setMessages((prev) => {
+                      const newMessages = [...prev];
+                      const lastIndex = newMessages.length - 1;
+                      newMessages[lastIndex] = {
+                        ...newMessages[lastIndex],
+                        content: newMessages[lastIndex].content + parsed.content,
+                      };
+                      return newMessages;
+                    });
+                  }
+                }
+              } catch (e) {
+                console.error('Error parsing stream data', e, data);
+              }
+            }
+          }
+        }
       }
     } catch (error) {
       console.error(error);
       setMessages((prev) => [...prev, { role: 'assistant', content: "Failed to connect to the backend server. Is FastAPI running?" }]);
-    } finally {
       setIsLoading(false);
+    } finally {
+      setIsStreaming(false);
     }
   };
 
@@ -171,13 +226,25 @@ export default function RuixenMoonChat() {
         onChange={handleFileChange}
       />
 
+      {/* Persistent App Header */}
+      <div className="absolute top-0 left-0 w-full p-6 flex items-center justify-start pointer-events-none z-10">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/20 backdrop-blur-md">
+            <Stethoscope className="w-5 h-5 text-cyan-400" />
+          </div>
+          <h1 className="text-xl font-semibold text-neutral-100 tracking-wide drop-shadow-sm">
+            Medi-bot
+          </h1>
+        </div>
+      </div>
+
       {messages.length === 0 ? (
         /* Centered AI Title for empty state */
         <div className="flex-1 w-full flex flex-col items-center justify-center">
-          <div className="text-center">
+          <div className="text-center mt-12">
             <Stethoscope size={64} className="mx-auto mb-4 text-cyan-400 opacity-80" />
             <h1 className="text-4xl font-semibold text-white drop-shadow-sm">
-              Medical RAG AI
+              Medi-bot
             </h1>
             <p className="mt-2 text-neutral-300 max-w-md mx-auto">
               Consult the clinical knowledge base. Start typing a medical query or upload a PDF document to expand the context.
@@ -186,7 +253,7 @@ export default function RuixenMoonChat() {
         </div>
       ) : (
         /* Chat Log Area */
-        <div className="flex-1 w-full max-w-4xl overflow-y-auto px-4 py-8 flex flex-col gap-6" style={{ scrollbarWidth: 'thin' }}>
+        <div className="flex-1 w-full max-w-4xl overflow-y-auto px-4 pt-24 pb-8 flex flex-col gap-6" style={{ scrollbarWidth: 'thin' }}>
           {messages.map((msg, idx) => (
             <div key={idx} className={cn("flex w-full", msg.role === 'user' ? "justify-end" : "justify-start")}>
               <div className={cn(
@@ -221,10 +288,9 @@ export default function RuixenMoonChat() {
                   <img src="/doctor_icon.png" alt="Doctor" className="w-full h-full rounded-full object-cover shadow-md border border-neutral-700/50" />
                 </div>
                 <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-neutral-700 text-neutral-200 rounded-tl-sm flex items-center h-[52px]">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div className="flex items-center gap-2 text-cyan-400 font-medium animate-pulse">
+                    <Activity className="w-4 h-4" />
+                    <span>Diagnosing...</span>
                   </div>
                 </div>
               </div>
@@ -283,10 +349,10 @@ export default function RuixenMoonChat() {
             <div className="flex items-center gap-2">
               <Button
                 onClick={handleSend}
-                disabled={!message.trim() || isLoading}
+                disabled={!message.trim() || isLoading || isStreaming}
                 className={cn(
                   "flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300",
-                  message.trim() && !isLoading
+                  message.trim() && !isLoading && !isStreaming
                     ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:scale-105 shadow-lg shadow-cyan-500/25"
                     : "bg-neutral-800 text-neutral-500 cursor-not-allowed"
                 )}
