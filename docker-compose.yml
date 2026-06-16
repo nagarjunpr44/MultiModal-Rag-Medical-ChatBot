@@ -20,13 +20,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        - VITE_API_BASE_URL=http://localhost:8000/api
     container_name: medical-rag-frontend
     ports:
-      - "8501:8501"
-    environment:
-      - API_BASE_URL=http://backend-api:8000/api
-    env_file:
-      - .env
+      - "3000:80"
     depends_on:
       - backend-api
     restart: always
