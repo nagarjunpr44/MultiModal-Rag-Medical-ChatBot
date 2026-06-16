@@ -16,7 +16,8 @@ Unlike standard text-only RAG systems, this application extracts both **text** a
 
 *   **True Multi-Modal Ingestion:** Automatically extracts raw images and text chunks from uploaded PDFs.
 *   **OpenCLIP Vector Database:** Leverages ChromaDB with OpenCLIP to map both text and images into a shared 512-dimensional embedding space.
-*   **Vision-Language Model Generation:** Integrates `llama-3.2-11b-vision-preview` via Groq for ultra-fast, visually-aware inference.
+*   **Two-Stage Retrieval with Cross-Encoder:** Implements industry-standard re-ranking using sentence-transformers to maximize context precision and reduce LLM hallucination.
+*   **Vision-Language Model Generation:** Integrates `llama-3.2-90b-vision-preview` via Groq for ultra-fast, visually-aware inference.
 *   **Decoupled Microservice Architecture:** 
     *   **Backend:** Asynchronous FastAPI handling ingestion and inference routes.
     *   **Frontend:** A professional, medical-themed Streamlit UI.
