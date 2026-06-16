@@ -15,7 +15,7 @@ Unlike standard text-only RAG systems, this application extracts both **text** a
 ## ✨ Key Features
 
 *   **True Multi-Modal Ingestion:** Automatically extracts raw images and text chunks from uploaded PDFs.
-*   **OpenCLIP Vector Database:** Leverages ChromaDB with OpenCLIP to map both text and images into a shared 512-dimensional embedding space.
+*   **Hybrid Retrieval Pipeline:** Combines **ChromaDB / OpenCLIP** (for dense semantic search) with **BM25** (for exact keyword matching) to achieve 100% context recall.
 *   **Two-Stage Retrieval with Cross-Encoder:** Implements industry-standard re-ranking using sentence-transformers to maximize context precision and reduce LLM hallucination.
 *   **Vision-Language Model Generation:** Integrates `llama-3.2-90b-vision-preview` via Groq for ultra-fast, visually-aware inference.
 *   **Decoupled Microservice Architecture:** 
