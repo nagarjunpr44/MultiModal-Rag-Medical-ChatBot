@@ -126,3 +126,22 @@ This document serves as a detailed ledger of the project's development phases, a
 **Challenges / Design Decisions:**
 *   *Challenge:* The old database collection was incompatible because OpenCLIP generates vectors with a different dimensionality than the standard sentence-transformer.
 *   *Decision:* Created a dedicated `multimodal_knowledge_base` collection to ensure clean separation of data. Any previously ingested PDFs need to be re-uploaded to be processed into the new multimodal space.
+
+---
+
+## Phase 6: Refinement & Productionization
+
+**Goal:** Package the entire microservice architecture into Docker containers so it can be deployed anywhere (AWS, GCP, local servers) with a single command.
+
+**What We Did:**
+*   **Dockerfiles (`Dockerfile.api` & `Dockerfile.frontend`):** Created lightweight, isolated environments based on `python:3.11-slim` for both the backend and frontend. We utilized `uv` inside Docker for incredibly fast dependency resolution.
+*   **Docker Compose (`docker-compose.yml`):** Networked the API and the Frontend together. We defined a dependency map so the frontend only starts after the API is ready.
+*   **Volume Mounting:** Mounted the local `./data` and `./chroma_db` directories into the container. This ensures that the vector database and the raw PDFs persist even if the containers are destroyed and recreated.
+*   **Networking Configuration:** Updated the Streamlit app to look for the API at the container hostname `http://backend-api:8000/api` using environment variables.
+*   **Version Control:** Initialized Git and began frequently committing changes.
+
+**What Worked Well:**
+*   The `.dockerignore` file successfully prevented our massive `.venv` folder from being copied into the container, keeping the image sizes manageable.
+
+**Challenges / Design Decisions:**
+*   *Decision (Networking):* By injecting `API_BASE_URL` as an environment variable in `docker-compose.yml`, we don't have to change any code when we move from Localhost to Production. Streamlit dynamically knows where to find the backend.
