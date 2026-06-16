@@ -1,4 +1,5 @@
 import os
+import json
 import fitz # PyMuPDF
 from typing import List
 from langchain_community.document_loaders import PyMuPDFLoader
@@ -66,6 +67,20 @@ class DocumentProcessor:
         if texts:
             self.collection.add(documents=texts, metadatas=text_metadatas, ids=text_ids)
             print(f"Inserted {len(texts)} text chunks.")
+            
+            # Save texts to a global corpus for BM25 (Sparse) Retrieval
+            corpus_path = os.path.join(os.path.dirname(self.images_dir), "corpus.json")
+            corpus = []
+            if os.path.exists(corpus_path):
+                try:
+                    with open(corpus_path, "r") as f:
+                        corpus = json.load(f)
+                except json.JSONDecodeError:
+                    pass
+            corpus.extend(texts)
+            with open(corpus_path, "w") as f:
+                json.dump(corpus, f)
+            print("Updated BM25 corpus.")
             
         if image_uris:
             self.collection.add(uris=image_uris, metadatas=image_metadatas, ids=image_ids)

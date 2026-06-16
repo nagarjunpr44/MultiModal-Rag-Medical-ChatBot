@@ -20,6 +20,7 @@ sentence-transformers>=2.5.0
 PyMuPDF>=1.23.21  # For parsing PDFs
 unstructured>=0.12.5 # For advanced document extraction
 Pillow>=10.2.0    # For image handling
+rank_bm25>=0.2.2  # For sparse keyword retrieval
 
 # Frontend
 streamlit>=1.31.1

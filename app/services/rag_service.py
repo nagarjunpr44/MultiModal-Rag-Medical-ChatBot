@@ -1,8 +1,10 @@
 import base64
 import os
+import json
 from typing import List
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_community.retrievers import BM25Retriever
 from app.infrastructure.vectordb import vector_db
 from app.core.config import settings
 from sentence_transformers import CrossEncoder
@@ -23,6 +25,18 @@ class RAGService:
         
         # Initialize Cross-Encoder for text re-ranking
         self.reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', max_length=512)
+        
+        # Load BM25 Retriever if corpus exists
+        corpus_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "corpus.json")
+        self.bm25_retriever = None
+        if os.path.exists(corpus_path):
+            try:
+                with open(corpus_path, "r") as f:
+                    corpus = json.load(f)
+                if corpus:
+                    self.bm25_retriever = BM25Retriever.from_texts(corpus)
+            except Exception as e:
+                print(f"Failed to load BM25 corpus: {e}")
 
     def get_answer(self, question: str, n_results: int = 3) -> str:
         # Retrieve a larger pool of candidates for the first stage
@@ -45,6 +59,14 @@ class RAGService:
                 candidate_texts.append(doc)
             if uri is not None and uri not in image_paths:
                 image_paths.append(uri)
+                
+        # Sparse Retrieval (BM25)
+        if self.bm25_retriever:
+            self.bm25_retriever.k = initial_k
+            bm25_docs = self.bm25_retriever.invoke(question)
+            for d in bm25_docs:
+                if d.page_content not in candidate_texts:
+                    candidate_texts.append(d.page_content)
                 
         # Stage 2: Re-rank the retrieved text candidates
         if candidate_texts:
