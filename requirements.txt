@@ -28,3 +28,7 @@ streamlit>=1.31.1
 # HTTP client
 httpx>=0.26.0
 requests>=2.31.0
+
+# Database
+SQLAlchemy>=2.0.25
+

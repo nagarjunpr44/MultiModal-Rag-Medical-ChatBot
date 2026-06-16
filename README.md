@@ -3,7 +3,10 @@
 ![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.30+-FF4B4B.svg)
+![React](https://img.shields.io/badge/React-18+-61DAFB.svg)
+![Tailwind](https://img.shields.io/badge/TailwindCSS-3.4+-38B2AC.svg)
+![SQLite](https://img.shields.io/badge/SQLite-3+-003B57.svg)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-1.5+-FCB32B.svg)
 ![ChromaDB](https://img.shields.io/badge/ChromaDB-1.5+-FCB32B.svg)
 
 An enterprise-grade, Multi-Modal Retrieval-Augmented Generation (RAG) system designed to parse, embed, and interpret clinical medical PDFs. 
@@ -17,11 +20,12 @@ Unlike standard text-only RAG systems, this application extracts both **text** a
 *   **True Multi-Modal Ingestion:** Automatically extracts raw images and text chunks from uploaded PDFs.
 *   **Hybrid Retrieval Pipeline:** Combines **ChromaDB / OpenCLIP** (for dense semantic search) with **BM25** (for exact keyword matching) to achieve 100% context recall.
 *   **Two-Stage Retrieval with Cross-Encoder:** Implements industry-standard re-ranking using sentence-transformers to maximize context precision and reduce LLM hallucination.
-*   **Vision-Language Model Generation:** Integrates `llama-3.2-90b-vision-preview` via Groq for ultra-fast, visually-aware inference.
+*   **Vision-Language Model Generation:** Integrates `llama-4-scout-17b-16e-instruct` via Groq for ultra-fast, visually-aware inference.
+*   **Real-Time Streaming:** Utilizes Server-Sent Events (SSE) for ChatGPT-like instant token streaming.
+*   **Persistent Chat History:** Integrated SQLite database with SQLAlchemy to seamlessly save, manage, and resume past chat sessions.
 *   **Decoupled Microservice Architecture:** 
-    *   **Backend:** Asynchronous FastAPI handling ingestion and inference routes.
-    *   **Frontend:** A professional, medical-themed Streamlit UI.
-*   **Dockerized Deployment:** Fully containerized with `docker-compose` for instant, reliable deployment anywhere.
+    *   **Backend:** Asynchronous FastAPI handling ingestion, database sessions, and streaming inference routes.
+    *   **Frontend:** A production-ready React (Vite) SPA utilizing Tailwind CSS, Framer Motion, and Shadcn UI for a premium medical aesthetic.
 
 ## 🏗️ Architecture Design
 
@@ -29,13 +33,16 @@ The project strictly follows Clean Architecture principles to ensure components 
 
 ```text
 app/
-├── api/          # FastAPI Routes (/chat, /upload)
+├── api/          # FastAPI Routes (/chat, /upload, /sessions)
 ├── core/         # Pydantic Settings & Configuration
+├── data/         # SQLite Database (medibot.db) & SQLAlchemy Setup
 ├── infrastructure/ # ChromaDB Singleton & OpenCLIP config
-├── models/       # Pydantic Schemas (ChatRequest, ChatResponse)
+├── models/       # Pydantic Schemas & SQLAlchemy DB Models
 └── services/     # Core Business Logic
     ├── document_processor.py # PyMuPDF text & image extraction
     └── rag_service.py        # LangChain Orchestration & Vision prompting
+
+frontend/         # Vite + React + Tailwind + Shadcn UI
 ```
 
 ---
@@ -74,18 +81,19 @@ docker-compose up --build
 If you prefer to run the services bare-metal for development:
 
 ```bash
-# 1. Install dependencies using 'uv'
+# 1. Install Python Backend Dependencies
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv venv
 source .venv/bin/activate
 uv pip install -r requirements.txt
 
-# 2. Start the Backend API
+# 2. Start the Backend API (FastAPI)
 uvicorn app.main:app --reload --port 8000
 
-# 3. Start the Frontend (in a new terminal)
-export API_BASE_URL=http://localhost:8000/api
-streamlit run frontend/app.py
+# 3. Install and Start the Frontend (React/Vite)
+cd frontend
+npm install
+npm run dev
 ```
 
 ## ⚠️ Disclaimer

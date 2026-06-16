@@ -145,3 +145,40 @@ This document serves as a detailed ledger of the project's development phases, a
 
 **Challenges / Design Decisions:**
 *   *Decision (Networking):* By injecting `API_BASE_URL` as an environment variable in `docker-compose.yml`, we don't have to change any code when we move from Localhost to Production. Streamlit dynamically knows where to find the backend.
+
+---
+
+## Phase 7: Modern React Frontend Migration
+
+**Goal:** Discard the Streamlit prototype and build a production-ready, custom React Single Page Application (SPA).
+
+**What We Did:**
+*   **Vite + React Setup:** Bootstrapped a blazing fast frontend environment using Vite.
+*   **UI Frameworks:** Integrated **Tailwind CSS** for utility-first styling and **Shadcn UI** for highly customizable, accessible components.
+*   **Design Overhaul:** Designed a premium, dark-mode medical aesthetic featuring glassmorphism elements, custom SVG backgrounds, and smooth micro-animations.
+*   **Component Architecture:** Segregated logic into a dedicated chat component (`ruixen-moon-chat.tsx`) supporting auto-resizing textareas and dynamic file uploads.
+
+**What Worked Well:**
+*   Moving away from Streamlit allowed for complete control over the layout, animations, and state management, providing a vastly superior user experience.
+
+---
+
+## Phase 8: Real-Time Streaming & Persistent Sessions
+
+**Goal:** Provide ChatGPT-like real-time token streaming and allow users to save and revisit past conversations.
+
+**What We Did:**
+*   **Database Integration:** 
+    *   Added **SQLAlchemy** and a local **SQLite** database (`medibot.db`) to the backend.
+    *   Created `ChatSession` and `ChatMessage` models to track conversation history.
+*   **Streaming API (SSE):** 
+    *   Refactored the `/chat/stream` endpoint in FastAPI to utilize Python generators and yield Server-Sent Events (SSE).
+    *   Rewrote the React frontend to parse incoming streams chunk-by-chunk using the `TextDecoder` Web API.
+*   **History Sidebar:** 
+    *   Built a smooth slide-out sidebar in the React frontend to list past sessions.
+    *   Wired the sidebar up to new FastAPI CRUD endpoints (`/api/sessions`) to instantly load historic context.
+*   **Context Injection:** Upgraded `rag_service.py` to automatically fetch past messages from SQLite and inject them into the LangChain context as `HumanMessage` and `AIMessage` objects, giving the LLM true conversational memory.
+
+**Challenges / Design Decisions:**
+*   *Challenge:* Handling SSE streams in JavaScript is notoriously tricky, especially when JSON objects get split across network packets. We implemented a robust newline-delimited buffer system in React to ensure incomplete JSON chunks are held safely until fully received.
+*   *Decision:* Opted for SQLite over PostgreSQL to keep the application entirely self-contained and easy to run locally without requiring a database container.

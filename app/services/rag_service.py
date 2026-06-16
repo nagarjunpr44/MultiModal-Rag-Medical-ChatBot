@@ -3,7 +3,8 @@ import os
 import json
 from typing import List
 from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from app.models.db_models import ChatMessage
 from langchain_community.retrievers import BM25Retriever
 from app.infrastructure.vectordb import vector_db
 from app.core.config import settings
@@ -88,10 +89,21 @@ class RAGService:
         context_text = "\n\n---\n\n".join(texts) if texts else "No relevant medical text documents found."
         
         # Construct the System Message
-        system_content = f"""You are a highly capable medical assistant. Your primary directive is to answer the user's questions based ONLY on the provided Context (which may include text and images). 
+        system_content = f"""You are an empathetic, highly capable clinical AI assistant designed to support medical professionals and patients.
+        
         Strict Rules:
-        1. If the answer is not contained within the Context or images, state: 'I cannot find the answer in the provided medical documents.'
-        2. Always include a disclaimer that this is not professional medical advice.
+        1. Base your answers ONLY on the provided Context (which may include text and images). 
+        2. Do NOT start your answers with phrases like "According to the provided context" or "Based on the text". Answer directly, confidently, and professionally, as a caring doctor would.
+        3. Maintain a warm, empathetic, yet highly professional clinical tone. 
+        4. If the answer is not contained within the Context or images, state gracefully: 'I apologize, but I cannot find the specific clinical answer in the provided medical documents.'
+        5. You MUST include a medical disclaimer at the absolute end of your response. It MUST be separated from the rest of your response by exactly one blank line, a markdown horizontal rule (---), and another blank line.
+        
+        Example formatting for the disclaimer:
+        [Your clinical response here]
+        
+        ---
+        
+        *Disclaimer: I am an AI assistant. This information is for educational and clinical support purposes only and does not constitute professional medical advice, diagnosis, or treatment.*
         
         Context Text:
         {context_text}"""
@@ -117,7 +129,18 @@ class RAGService:
         response = self.llm.invoke(messages)
         return response.content
 
-    def get_answer_stream(self, question: str, n_results: int = 3):
+    def get_answer_stream(self, question: str, n_results: int = 3, session_id: str = None, db = None):
+        # Get past messages if session exists
+        past_msgs = []
+        if session_id and db:
+            past_msgs = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(ChatMessage.created_at).all()
+            
+        # Save current user message to DB
+        if session_id and db:
+            user_msg = ChatMessage(session_id=session_id, role="user", content=question)
+            db.add(user_msg)
+            db.commit()
+
         # Retrieve a larger pool of candidates for the first stage
         initial_k = max(15, n_results * 5)
         results = self.collection.query(
@@ -167,10 +190,21 @@ class RAGService:
         context_text = "\n\n---\n\n".join(texts) if texts else "No relevant medical text documents found."
         
         # Construct the System Message
-        system_content = f"""You are a highly capable medical assistant. Your primary directive is to answer the user's questions based ONLY on the provided Context (which may include text and images). 
+        system_content = f"""You are an empathetic, highly capable clinical AI assistant designed to support medical professionals and patients.
+        
         Strict Rules:
-        1. If the answer is not contained within the Context or images, state: 'I cannot find the answer in the provided medical documents.'
-        2. Always include a disclaimer that this is not professional medical advice.
+        1. Base your answers ONLY on the provided Context (which may include text and images). 
+        2. Do NOT start your answers with phrases like "According to the provided context" or "Based on the text". Answer directly, confidently, and professionally, as a caring doctor would.
+        3. Maintain a warm, empathetic, yet highly professional clinical tone. 
+        4. If the answer is not contained within the Context or images, state gracefully: 'I apologize, but I cannot find the specific clinical answer in the provided medical documents.'
+        5. You MUST include a medical disclaimer at the absolute end of your response. It MUST be separated from the rest of your response by exactly one blank line, a markdown horizontal rule (---), and another blank line.
+        
+        Example formatting for the disclaimer:
+        [Your clinical response here]
+        
+        ---
+        
+        *Disclaimer: I am an AI assistant. This information is for educational and clinical support purposes only and does not constitute professional medical advice, diagnosis, or treatment.*
         
         Context Text:
         {context_text}"""
@@ -189,13 +223,30 @@ class RAGService:
         
         messages = [
             SystemMessage(content=system_content),
-            HumanMessage(content=human_content)
         ]
         
+        # Inject Chat History
+        for pm in past_msgs:
+            if pm.role == "user":
+                messages.append(HumanMessage(content=pm.content))
+            else:
+                messages.append(AIMessage(content=pm.content))
+                
+        # Current question (multimodal with images)
+        messages.append(HumanMessage(content=human_content))
+        
         # Stream Answer
+        full_response = ""
         for chunk in self.llm.stream(messages):
             if chunk.content:
+                full_response += chunk.content
                 yield f"data: {json.dumps({'content': chunk.content})}\n\n"
+                
+        # Save assistant message to DB
+        if session_id and db:
+            ai_msg = ChatMessage(session_id=session_id, role="assistant", content=full_response)
+            db.add(ai_msg)
+            db.commit()
 
 
 # Singleton instance

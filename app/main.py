@@ -3,7 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 import uvicorn
 
-from app.api.endpoints import chat, upload
+from app.api.endpoints import chat, upload, sessions
+from app.data.database import engine, Base
+
+# Create DB tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -22,6 +26,7 @@ app.add_middleware(
 # Register API Routers
 app.include_router(chat.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
+app.include_router(sessions.router, prefix="/api")
 
 @app.get("/health")
 async def health_check():

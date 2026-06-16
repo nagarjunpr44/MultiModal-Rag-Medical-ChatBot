@@ -1,12 +1,24 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['IBM Plex Sans', 'sans-serif'],
+        serif: ['Instrument Serif', 'serif'],
+      },
       colors: {
+        clinical: {
+          paper: '#FAFAFA',
+          ink: '#111827',
+          scrub: '#0D9488',
+          alert: '#E11D48',
+          rule: '#E5E7EB',
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -35,5 +47,7 @@ export default {
       }
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 }
