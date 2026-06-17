@@ -122,4 +122,8 @@ uv run scripts/evaluate_rag.py
 ## ⚠️ Disclaimer
 This system is an educational portfolio project demonstrating advanced AI architecture. **It is not a medical device and should not be used for actual diagnostic purposes or to replace professional medical advice.**
 
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ---
