@@ -7,9 +7,12 @@ class Settings(BaseSettings):
     # Groq Settings
     GROQ_API_KEY: str = ""
     
+    # OpenAI Settings (for Ragas Evaluation)
+    OPENAI_API_KEY: str | None = None
+    
     # Vector DB Settings
     CHROMA_PERSIST_DIRECTORY: str = "./chroma_db"
     
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()

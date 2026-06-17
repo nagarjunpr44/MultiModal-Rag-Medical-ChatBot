@@ -96,6 +96,29 @@ npm install
 npm run dev
 ```
 
+## 🧪 Evaluation & Testing
+
+This project incorporates a robust **Retrieval-Augmented Generation (RAG) Evaluation Pipeline** using **Ragas** to rigorously test the accuracy and factual consistency of the chatbot.
+
+### 1. Synthetic Test Dataset Generation
+To overcome the "ground truth" bottleneck, the system uses the `ragas.testset.generator` to automatically synthesize a test dataset directly from the ingested medical documents in the Vector DB. It extracts medical concepts and employs an LLM to generate diverse question-and-answer pairs, creating a realistic testing environment without manual annotation.
+
+### 2. Ragas Evaluation Metrics
+The pipeline programmatically evaluates the chatbot's answers against the synthetic ground truth using the following metrics:
+*   **Answer Relevancy:** Measures how relevant the generated answer is to the user's prompt (penalizing incomplete or tangential answers).
+*   **Context Precision:** Evaluates if the retriever correctly ranks the most relevant documents at the top.
+*   **Context Recall:** Checks if the retrieved context contains all the necessary information to answer the question.
+*   **Faithfulness (Factual Consistency):** Measures hallucination by ensuring every claim in the generated answer can be directly inferred from the retrieved context. 
+
+To run the evaluation pipeline:
+```bash
+# 1. Generate the synthetic test dataset from your ingested documents
+uv run scripts/generate_test_set.py
+
+# 2. Run the evaluation to score the RAG pipeline
+uv run scripts/evaluate_rag.py
+```
+
 ## ⚠️ Disclaimer
 This system is an educational portfolio project demonstrating advanced AI architecture. **It is not a medical device and should not be used for actual diagnostic purposes or to replace professional medical advice.**
 
